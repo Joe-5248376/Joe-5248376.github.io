@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jared's Super Kool Website</title>
+    <style>
+        canvas { display: block; }
+        body { margin: 0; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Array to hold sprites (circles)
+        let sprites = [];
+
+        // Create 100 sprites with random properties
+        for(let i = 0; i < 100; i++) {
+            sprites.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                mass: Math.random() * 5 + 1,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`
+            });
+        }
+
+        // Damping factor to reduce velocity over time
+        const damping = 0.99;
+
+        // Animation function
+        function animate() {
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw each sprite
+            for (let i = 0; i < sprites.length; i++) {
+                let sprite = sprites[i];
+
+                // Apply gravitational force from other sprites
+                for (let j = sprites.length - 1; j >= 0; j--) {
+                    if (i !== j) {
+                        let other = sprites[j];
+                        let dx = other.x - sprite.x;
+                        let dy = other.y - sprite.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+
+                        // Check for collision and merge if necessary
+                        if (distance < sprite.mass + other.mass) {
+                            // Merge sprites
+                            if (sprite.mass >= other.mass) {
+                                sprite.mass += other.mass;
+                                sprite.vx = (sprite.vx * sprite.mass + other.vx * other.mass) / (sprite.mass + other.mass);
+                                sprite.vy = (sprite.vy * sprite.mass + other.vy * other.mass) / (sprite.mass + other.mass);
+                                sprites.splice(j, 1);
+                                if (j < i) {
+                                    i--;
+                                }
+                            } else {
+                                other.mass += sprite.mass;
+                                other.vx = (other.vx * other.mass + sprite.vx * sprite.mass) / (other.mass + sprite.mass);
+                                other.vy = (other.vy * other.mass + sprite.vy * sprite.mass) / (other.mass + sprite.mass);
+                                other.color = sprite.color;
+                                sprites[i] = other;
+                                sprites.splice(j, 1);
+                                if (j < i) {
+                                    i--;
+                                }
+                            }
+                            continue;
+                        }
+
+                        let force = (other.mass) / (distance * distance);
+                        sprite.vx += force * dx / distance;
+                        sprite.vy += force * dy / distance;
+                    }
+                }
+
+                // Apply damping to velocities
+                sprite.vx *= damping;
+                sprite.vy *= damping;
+
+                // Update position
+                sprite.x += sprite.vx;
+                sprite.y += sprite.vy;
+
+                // Wrap around the edges
+                if (sprite.x < 0) sprite.x = canvas.width;
+                if (sprite.x > canvas.width) sprite.x = 0;
+                if (sprite.y < 0) sprite.y = canvas.height;
+                if (sprite.y > canvas.height) sprite.y = 0;
+
+                // Draw sprite
+                ctx.beginPath();
+                ctx.arc(sprite.x, sprite.y, sprite.mass, 0, Math.PI * 2);
+                ctx.fillStyle = sprite.color;
+                ctx.fill();
+            }
+
+
+            // Check if only one sprite remains and redirect
+            if (sprites.length <= 1) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+
+            // Request next frame
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
